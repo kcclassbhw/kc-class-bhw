@@ -41,8 +41,26 @@ function stripBase(path: string): string {
     : path;
 }
 
+
 if (!clerkPubKey) {
-  throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env file');
+  const root = document.getElementById('root');
+  if (root) {
+    root.innerHTML = `
+      <div style="font-family:monospace;padding:2rem;max-width:640px;margin:4rem auto;line-height:1.7;color:#111">
+        <h2 style="color:#dc2626;margin-bottom:1rem">&#9888; Missing environment variable</h2>
+        <p><strong>VITE_CLERK_PUBLISHABLE_KEY</strong> is not set.</p>
+        <p style="margin-top:1rem">To fix this on Windows:</p>
+        <ol style="padding-left:1.5rem">
+          <li>In File Explorer, copy <code>artifacts\\learn\\.env.example</code> and rename the copy to <code>.env</code></li>
+          <li>Open the <code>.env</code> file in Notepad or VSCode</li>
+          <li>Get your Clerk key at <a href="https://dashboard.clerk.com" target="_blank">dashboard.clerk.com</a> &rarr; API Keys</li>
+          <li>Replace <code>pk_test_REPLACE_ME</code> with your actual key</li>
+          <li>Save and restart the dev server (<code>Ctrl+C</code> then <code>pnpm --filter @workspace/learn run dev</code>)</li>
+        </ol>
+        <p style="margin-top:1rem;color:#6b7280">See <strong>SETUP.md</strong> in the project root for the full walkthrough.</p>
+      </div>`;
+  }
+  throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY — see the setup screen in your browser');
 }
 
 const clerkAppearance = {

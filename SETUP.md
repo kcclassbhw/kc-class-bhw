@@ -29,7 +29,7 @@ Verify: `node --version` → should show `v22.x.x` or higher
 npm install -g pnpm
 ```
 
-Verify: `pnpm --version` → should show `10.x.x`
+Verify: `pnpm --version` → should show `9.x.x` or higher (10.x, 11.x all work)
 
 ### 3. Git
 
