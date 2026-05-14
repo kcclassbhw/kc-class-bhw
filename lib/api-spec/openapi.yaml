@@ -3,20 +3,54 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: LearnHub learning platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: videos
+    description: YouTube channel video operations
+  - name: courses
+    description: Course operations
+  - name: lessons
+    description: Lesson operations
+  - name: resources
+    description: Resource operations
+  - name: subscriptions
+    description: Subscription operations
+  - name: progress
+    description: Progress tracking operations
+  - name: admin
+    description: Admin operations
+  - name: dashboard
+    description: Dashboard summary operations
+  - name: esewa
+    description: eSewa payment operations
+
 paths:
+  # ─── Videos ──────────────────────────────────────────────────────────────────
+  /videos:
+    get:
+      operationId: listChannelVideos
+      tags: [videos]
+      summary: List latest YouTube channel videos
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/YouTubeVideo"
+
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +58,880 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ─── Courses ────────────────────────────────────────────────────────────────
+  /courses:
+    get:
+      operationId: listCourses
+      tags: [courses]
+      summary: List all published courses
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: category
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Course"
+    post:
+      operationId: createCourse
+      tags: [courses, admin]
+      summary: Create a new course (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CourseInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+
+  /courses/{id}:
+    get:
+      operationId: getCourse
+      tags: [courses]
+      summary: Get a single course with lessons
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseDetail"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateCourse
+      tags: [courses, admin]
+      summary: Update a course (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CourseUpdate"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+    delete:
+      operationId: deleteCourse
+      tags: [courses, admin]
+      summary: Delete a course (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Lessons ────────────────────────────────────────────────────────────────
+  /courses/{courseId}/lessons:
+    get:
+      operationId: listLessons
+      tags: [lessons]
+      summary: List lessons for a course
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Lesson"
+    post:
+      operationId: createLesson
+      tags: [lessons, admin]
+      summary: Create a lesson (admin only)
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LessonInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lesson"
+
+  /courses/{courseId}/lessons/{id}:
+    get:
+      operationId: getLesson
+      tags: [lessons]
+      summary: Get a single lesson (requires active subscription for premium)
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lesson"
+        "403":
+          description: Subscription required
+    patch:
+      operationId: updateLesson
+      tags: [lessons, admin]
+      summary: Update a lesson (admin only)
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LessonUpdate"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lesson"
+    delete:
+      operationId: deleteLesson
+      tags: [lessons, admin]
+      summary: Delete a lesson (admin only)
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Resources ──────────────────────────────────────────────────────────────
+  /resources:
+    get:
+      operationId: listResources
+      tags: [resources]
+      summary: List all resources (requires active subscription)
+      parameters:
+        - name: category
+          in: query
+          schema: { type: string }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Resource"
+    post:
+      operationId: createResource
+      tags: [resources, admin]
+      summary: Create a resource (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResourceInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Resource"
+
+  /resources/{id}:
+    get:
+      operationId: getResource
+      tags: [resources]
+      summary: Get a resource with signed download URL
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceWithUrl"
+    patch:
+      operationId: updateResource
+      tags: [resources, admin]
+      summary: Update a resource (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResourceUpdate"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Resource"
+    delete:
+      operationId: deleteResource
+      tags: [resources, admin]
+      summary: Delete a resource (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  /resources/{id}/download:
+    post:
+      operationId: trackDownload
+      tags: [resources]
+      summary: Track resource download
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DownloadRecord"
+
+  # ─── Progress ───────────────────────────────────────────────────────────────
+  /progress:
+    get:
+      operationId: getProgress
+      tags: [progress]
+      summary: Get user progress across all courses
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Progress"
+
+  /progress/{lessonId}:
+    post:
+      operationId: markLessonComplete
+      tags: [progress]
+      summary: Mark a lesson as complete or incomplete
+      parameters:
+        - name: lessonId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProgressInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Progress"
+
+  # ─── Subscriptions ──────────────────────────────────────────────────────────
+  /subscriptions/me:
+    get:
+      operationId: getMySubscription
+      tags: [subscriptions]
+      summary: Get current user's subscription status
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+
+  /subscriptions/checkout:
+    post:
+      operationId: createCheckoutSession
+      tags: [subscriptions, esewa]
+      summary: Create an eSewa checkout session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutSessionInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutSession"
+
+  /subscriptions/verify:
+    post:
+      operationId: verifyPayment
+      tags: [subscriptions, esewa]
+      summary: Verify eSewa payment and activate subscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EsewaVerifyInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EsewaVerifyResult"
+
+  # ─── Dashboard ──────────────────────────────────────────────────────────────
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary for logged-in user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/continue-watching:
+    get:
+      operationId: getContinueWatching
+      tags: [dashboard]
+      summary: Get recently accessed lessons for continue watching
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContinueWatchingItem"
+
+  /dashboard/download-history:
+    get:
+      operationId: getDownloadHistory
+      tags: [dashboard]
+      summary: Get user's download history
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DownloadRecord"
+
+  # ─── Admin ──────────────────────────────────────────────────────────────────
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Get platform-wide admin statistics
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  /admin/users:
+    get:
+      operationId: listAdminUsers
+      tags: [admin]
+      summary: List all users with subscription status (admin only)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUser"
+
+  /admin/subscriptions:
+    get:
+      operationId: listAdminSubscriptions
+      tags: [admin]
+      summary: List all subscriptions (admin only)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Subscription"
+
+  /admin/users/{clerkId}/role:
+    patch:
+      operationId: updateUserRole
+      tags: [admin]
+      summary: Update a user's role (admin only)
+      parameters:
+        - name: clerkId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRoleUpdate"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUser"
+
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [admin]
+      summary: Get current user profile and subscription info
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+    patch:
+      operationId: updateMe
+      tags: [admin]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserProfileUpdate"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
-        status:
-          type: string
-      required:
-        - status
+        status: { type: string }
 
+    # ─── Courses ──────────────────────────────────────────────────────────────
+    Course:
+      type: object
+      required: [id, title, slug, description, thumbnailUrl, category, isPublished, lessonCount, createdAt]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        slug: { type: string }
+        description: { type: string }
+        thumbnailUrl: { type: ["string", "null"] }
+        category: { type: string }
+        isPublished: { type: boolean }
+        isFree: { type: boolean }
+        lessonCount: { type: integer }
+        totalDurationMinutes: { type: ["integer", "null"] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CourseDetail:
+      type: object
+      required: [id, title, slug, description, thumbnailUrl, category, isPublished, lessons, lessonCount, createdAt]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        slug: { type: string }
+        description: { type: string }
+        thumbnailUrl: { type: ["string", "null"] }
+        category: { type: string }
+        isPublished: { type: boolean }
+        isFree: { type: boolean }
+        lessonCount: { type: integer }
+        totalDurationMinutes: { type: ["integer", "null"] }
+        lessons:
+          type: array
+          items:
+            $ref: "#/components/schemas/Lesson"
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CourseInput:
+      type: object
+      required: [title, description, category]
+      properties:
+        title: { type: string, minLength: 1 }
+        description: { type: string }
+        category: { type: string }
+        thumbnailUrl: { type: string }
+        isFree: { type: boolean }
+        isPublished: { type: boolean }
+
+    CourseUpdate:
+      type: object
+      properties:
+        title: { type: string, minLength: 1 }
+        description: { type: string }
+        category: { type: string }
+        thumbnailUrl: { type: string }
+        isFree: { type: boolean }
+        isPublished: { type: boolean }
+
+    # ─── Lessons ──────────────────────────────────────────────────────────────
+    Lesson:
+      type: object
+      required: [id, courseId, title, order, isFree, isPublished, createdAt]
+      properties:
+        id: { type: integer }
+        courseId: { type: integer }
+        title: { type: string }
+        description: { type: ["string", "null"] }
+        videoUrl: { type: ["string", "null"] }
+        youtubeVideoId: { type: ["string", "null"] }
+        durationMinutes: { type: ["integer", "null"] }
+        order: { type: integer }
+        isFree: { type: boolean }
+        isPublished: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    LessonInput:
+      type: object
+      required: [title, order]
+      properties:
+        title: { type: string, minLength: 1 }
+        description: { type: string }
+        videoUrl: { type: string }
+        youtubeVideoId: { type: string }
+        durationMinutes: { type: integer }
+        order: { type: integer }
+        isFree: { type: boolean }
+        isPublished: { type: boolean }
+
+    LessonUpdate:
+      type: object
+      properties:
+        title: { type: string, minLength: 1 }
+        description: { type: string }
+        videoUrl: { type: string }
+        youtubeVideoId: { type: string }
+        durationMinutes: { type: integer }
+        order: { type: integer }
+        isFree: { type: boolean }
+        isPublished: { type: boolean }
+
+    # ─── Resources ────────────────────────────────────────────────────────────
+    Resource:
+      type: object
+      required: [id, title, category, fileType, fileSize, downloadCount, createdAt]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        description: { type: ["string", "null"] }
+        category: { type: string }
+        fileType: { type: string }
+        fileSize: { type: integer }
+        downloadCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+
+    ResourceWithUrl:
+      type: object
+      required: [id, title, category, fileType, fileSize, downloadCount, signedUrl, createdAt]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        description: { type: ["string", "null"] }
+        category: { type: string }
+        fileType: { type: string }
+        fileSize: { type: integer }
+        downloadCount: { type: integer }
+        signedUrl: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    ResourceInput:
+      type: object
+      required: [title, category, fileType, fileSize, storageKey]
+      properties:
+        title: { type: string, minLength: 1 }
+        description: { type: string }
+        category: { type: string }
+        fileType: { type: string }
+        fileSize: { type: integer }
+        storageKey: { type: string }
+
+    ResourceUpdate:
+      type: object
+      properties:
+        title: { type: string, minLength: 1 }
+        description: { type: string }
+        category: { type: string }
+
+    DownloadRecord:
+      type: object
+      required: [id, resourceId, userId, resourceTitle, downloadedAt]
+      properties:
+        id: { type: integer }
+        resourceId: { type: integer }
+        userId: { type: string }
+        resourceTitle: { type: string }
+        downloadedAt: { type: string, format: date-time }
+
+    # ─── Progress ─────────────────────────────────────────────────────────────
+    Progress:
+      type: object
+      required: [id, lessonId, courseId, userId, completed, lastAccessedAt]
+      properties:
+        id: { type: integer }
+        lessonId: { type: integer }
+        courseId: { type: integer }
+        userId: { type: string }
+        completed: { type: boolean }
+        lastAccessedAt: { type: string, format: date-time }
+
+    ProgressInput:
+      type: object
+      required: [completed]
+      properties:
+        completed: { type: boolean }
+
+    # ─── Subscriptions ────────────────────────────────────────────────────────
+    Subscription:
+      type: object
+      required: [id, userId, status, plan, createdAt]
+      properties:
+        id: { type: integer }
+        userId: { type: string }
+        esewaTransactionId: { type: ["string", "null"] }
+        status: { type: string }
+        plan: { type: string }
+        currentPeriodEnd: { type: ["string", "null"], format: date-time }
+        cancelAtPeriodEnd: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    CheckoutSessionInput:
+      type: object
+      required: [plan]
+      properties:
+        plan: { type: string }
+
+    CheckoutSession:
+      type: object
+      required: [paymentUrl, formData]
+      properties:
+        paymentUrl: { type: string }
+        formData:
+          type: object
+          required: [amount, tax_amount, total_amount, transaction_uuid, product_code, product_service_charge, product_delivery_charge, success_url, failure_url, signed_field_names, signature]
+          properties:
+            amount: { type: string }
+            tax_amount: { type: string }
+            total_amount: { type: string }
+            transaction_uuid: { type: string }
+            product_code: { type: string }
+            product_service_charge: { type: string }
+            product_delivery_charge: { type: string }
+            success_url: { type: string }
+            failure_url: { type: string }
+            signed_field_names: { type: string }
+            signature: { type: string }
+
+    EsewaVerifyInput:
+      type: object
+      required: [encodedData, plan]
+      properties:
+        encodedData: { type: string }
+        plan: { type: string }
+
+    EsewaVerifyResult:
+      type: object
+      required: [success]
+      properties:
+        success: { type: boolean }
+
+    # ─── Dashboard ────────────────────────────────────────────────────────────
+    DashboardSummary:
+      type: object
+      required: [totalCourses, completedLessons, totalLessons, enrolledCourses, activeSubscription, totalDownloads]
+      properties:
+        totalCourses: { type: integer }
+        completedLessons: { type: integer }
+        totalLessons: { type: integer }
+        enrolledCourses: { type: integer }
+        activeSubscription: { type: boolean }
+        totalDownloads: { type: integer }
+        subscriptionPlan: { type: ["string", "null"] }
+        subscriptionEnd: { type: ["string", "null"], format: date-time }
+
+    ContinueWatchingItem:
+      type: object
+      required: [lessonId, lessonTitle, courseId, courseTitle, courseThumbnailUrl, lastAccessedAt]
+      properties:
+        lessonId: { type: integer }
+        lessonTitle: { type: string }
+        courseId: { type: integer }
+        courseTitle: { type: string }
+        courseThumbnailUrl: { type: ["string", "null"] }
+        lastAccessedAt: { type: string, format: date-time }
+        completed: { type: boolean }
+
+    # ─── Admin ────────────────────────────────────────────────────────────────
+    AdminStats:
+      type: object
+      required: [totalUsers, activeSubscriptions, totalCourses, totalLessons, totalResources, totalRevenue, monthlyRevenue]
+      properties:
+        totalUsers: { type: integer }
+        activeSubscriptions: { type: integer }
+        totalCourses: { type: integer }
+        totalLessons: { type: integer }
+        totalResources: { type: integer }
+        totalRevenue: { type: number }
+        monthlyRevenue: { type: number }
+
+    AdminUser:
+      type: object
+      required: [clerkId, email, name, role, createdAt]
+      properties:
+        clerkId: { type: string }
+        email: { type: string }
+        name: { type: string }
+        role: { type: string }
+        subscriptionStatus: { type: ["string", "null"] }
+        subscriptionPlan: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+
+    UserRoleUpdate:
+      type: object
+      required: [role]
+      properties:
+        role: { type: string }
+
+    UserProfile:
+      type: object
+      required: [clerkId, email, name, role, createdAt]
+      properties:
+        clerkId: { type: string }
+        email: { type: string }
+        name: { type: string }
+        role: { type: string }
+        bio: { type: ["string", "null"] }
+        avatarUrl: { type: ["string", "null"] }
+        subscription:
+          $ref: "#/components/schemas/Subscription"
+        createdAt: { type: string, format: date-time }
+
+    UserProfileUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        bio: { type: string }
+        avatarUrl: { type: string }
+
+    # ─── Videos ───────────────────────────────────────────────────────────────
+    YouTubeVideo:
+      type: object
+      required: [id, title, description, publishedAt, thumbnailUrl, videoUrl, viewCount, likeCount]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        description: { type: string }
+        publishedAt: { type: string, format: date-time }
+        thumbnailUrl: { type: string }
+        videoUrl: { type: string }
+        viewCount: { type: integer }
+        likeCount: { type: integer }
