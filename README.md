@@ -700,3 +700,6 @@ To deploy: click **Publish** in the Replit workspace. Both services are built an
 - **The Clerk `<SignedIn>` component renders nothing while loading.** Use `useUser()` hooks with `isLoaded` checks in route guards to avoid brief blank pages.
 - **`pnpm --filter @workspace/db run push` is for development only.** In production, dropping or renaming columns will destroy data. Apply schema changes carefully.
 - **Subscription auto-expire runs on the next API call, not a timer.** If a student's subscription expires but they don't open the app, the DB row stays `active` until their next visit. This is intentional and safe — the middleware re-checks expiry on every premium route access.
+#   k c - c l a s s - b h w  
+ #   k c - c l a s s - b h w  
+ 
