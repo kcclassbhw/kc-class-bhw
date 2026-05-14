@@ -1,203 +1,220 @@
 # KC Class BHW — Launch Guide
 
-Everything you need to do, in order, to go from this project to a live website with real paying students.
+Everything you need to go from a working local dev environment to a live website with real paying students.
 
 ---
 
-## Step 1 — Set Up Your Database
+## Prerequisites
 
-Your app needs a PostgreSQL database to store users, courses, subscriptions, and progress.
+Before launching, make sure:
+- [ ] Local dev is working (see **SETUP.md**)
+- [ ] You have added at least one published course with lessons
+- [ ] You have tested a complete eSewa payment in sandbox mode (see Step 4)
 
-1. In your Replit project, click the **Database** tab on the left sidebar
-2. Click **Create Database** — Replit creates a free PostgreSQL database for you
-3. It automatically sets the `DATABASE_URL` secret — you don't need to copy anything
-4. Now push the table structure to the database:
-   - Click the **Shell** tab and run:
-   ```
+---
+
+## Step 1 — Create the Production Database
+
+Your Replit-hosted app needs its own database separate from your local one.
+
+1. Open your project in the browser at **replit.com**
+2. Click the **Database** tab in the left sidebar (the cylinder icon)
+3. Click **Create Database** — Replit creates a free PostgreSQL database automatically
+4. The `DATABASE_URL` secret is set for you — no need to copy anything
+
+Then create the tables:
+
+1. Click the **Shell** tab in the left sidebar
+2. Run:
+   ```bash
    pnpm --filter @workspace/db run push
    ```
-5. You should see a success message with all the table names
+3. You should see all tables created successfully
 
 ---
 
-## Step 2 — Make Yourself an Admin
+## Step 2 — Set Up Clerk for Production
 
-Right now nobody is an admin. You need to sign in to your own website first, then promote yourself.
+The Replit-managed Clerk integration provisions keys automatically when you deploy. No manual Clerk setup is needed on Replit — the `CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` environment variables are provided by the platform.
 
-1. Click **Publish** in Replit (top right) to get your live URL — something like `yourapp.replit.app`
-2. Go to your live URL and click **Sign Up** — create your account
-3. Go back to Replit → click the **Database** tab → click **Query**
-4. Run this SQL (replace the email with your own):
+If you want to use your **own** Clerk application instead:
+
+1. Go to https://dashboard.clerk.com → your application → **API Keys**
+2. Click the **Secrets** tab (lock icon) in your Replit project
+3. Add these two secrets:
+   | Name | Value |
+   |---|---|
+   | `CLERK_PUBLISHABLE_KEY` | `pk_live_...` (your Clerk publishable key) |
+   | `CLERK_SECRET_KEY` | `sk_live_...` (your Clerk secret key) |
+
+---
+
+## Step 3 — Publish the App
+
+1. In Replit, click the **Publish** button in the top-right corner
+2. Choose a subdomain for your site — e.g. `kcclassbhw` → your site will be at `kcclassbhw.replit.app`
+3. Click **Deploy**
+4. Wait 2–3 minutes for the build to finish
+5. Your site is now live
+
+---
+
+## Step 4 — Test a Full Payment (Sandbox)
+
+Before accepting real money, test the complete payment flow with eSewa's test environment. No eSewa account is needed for this — sandbox mode is on by default.
+
+1. Open your live site in an **incognito/private browser window**
+2. Click **Sign Up** and create a test account
+3. Go to **/pricing** and click **Pay Monthly** or **Pay Yearly**
+4. You are redirected to eSewa's test payment page (`rc-epay.esewa.com.np`)
+5. Log in with these test credentials:
+   - **eSewa ID:** `9806800001` (or `9806800002` through `9806800005`)
+   - **MPIN:** `1122`
+   - **Password:** `Nepal@123`
+6. Complete the payment
+7. You are redirected back to **/payment/verify** — the page verifies the transaction
+8. You land on **/dashboard** with your subscription active
+9. Open a premium lesson — it should play
+10. Go to **/resources** — you should see the resource vault
+
+If all 10 steps work, the platform is ready for real payments.
+
+---
+
+## Step 5 — Make Yourself Admin on the Live Site
+
+1. Sign up on the **live site** using your real email (do this in normal browser, not incognito)
+2. Go back to Replit → click the **Database** tab → click **Query**
+3. Run:
    ```sql
    UPDATE users SET role = 'admin' WHERE email = 'your@email.com';
    ```
-5. Now when you visit `/admin` on your website, you'll have full access
+4. Refresh the live site — you now have access to **/admin**
 
 ---
 
-## Step 3 — Add Your Courses
+## Step 6 — Enable Real eSewa Payments
 
-1. Go to `yourapp.replit.app/admin/courses`
-2. Click **New Course**
-3. Fill in:
-   - **Title** — the name of your course (e.g. "B.Ed English Grammar Complete")
-   - **Description** — what students will learn
-   - **Category** — e.g. Grammar, Pedagogy, Phonetics, Literature
-   - **Thumbnail URL** — paste any image URL for the course cover photo
-   - Turn **Published** on so students can see it
-4. Click **Create Course**
-5. Repeat for each course you want to add
+> Skip this step while testing. Come back here once you are ready to accept real NPR payments from students.
 
----
+### Get your eSewa merchant account
 
-## Step 4 — Add Your Lessons
-
-For each course you created:
-
-1. Go to `/admin/courses` and click **Manage Lessons**
-2. Click **Add Lesson**
-3. Fill in:
-   - **Title** — the lesson name
-   - **Description / Notes** — text students see below the video
-   - **YouTube Video ID** — copy this from your YouTube video URL:
-     - Your URL: `https://www.youtube.com/watch?v=dQw4w9WgXcQ`
-     - The ID is: `dQw4w9WgXcQ` (everything after `?v=`)
-   - **Duration** — length in minutes
-   - **Sort Order** — 1 for first lesson, 2 for second, etc.
-   - Turn **Free Preview** on for 1–2 lessons per course so students can try before subscribing
-   - Turn **Published** on
-4. Click **Create Lesson**
-5. Repeat for all your lessons
-
-> **Tip for premium lessons:** Set your YouTube video to **Unlisted** before copying the ID. Unlisted videos don't show on your channel or in YouTube search — only people with the link can watch them. Your website controls who gets the link.
-
----
-
-## Step 5 — Set Up eSewa Payments
-
-### If you want to test first (sandbox — no real money)
-
-Skip this step for now. The app already works in test mode with fake eSewa payments. Come back here when you're ready to accept real payments.
-
-### When you're ready for real payments
-
-1. Go to [esewa.com.np/epay/merchant](https://esewa.com.np/epay/merchant) and apply for a merchant account
-2. eSewa will give you:
+1. Go to https://esewa.com.np/epay/merchant and apply for a merchant account
+2. eSewa will provide you with:
    - A **Merchant Code** (also called Product Code)
    - A **Secret Key**
-3. In Replit, click the **Secrets** tab (lock icon on the left sidebar)
-4. Add these secrets one by one:
 
-   | Name | Value |
-   |---|---|
-   | `ESEWA_PRODUCT_CODE` | Your merchant code from eSewa |
-   | `ESEWA_SECRET_KEY` | Your secret key from eSewa |
-   | `ESEWA_MONTHLY_PRICE` | `299` (or whatever price you want in NPR) |
-   | `ESEWA_YEARLY_PRICE` | `2399` (or whatever price you want in NPR) |
-   | `ESEWA_ENV` | `production` |
+### Add secrets to Replit
 
-5. After adding the secrets, restart the API server:
-   - Go to the **Workflows** panel and restart `artifacts/api-server: API Server`
+1. In your Replit project, click the **Secrets** tab (lock icon in the left sidebar)
+2. Add these secrets one by one:
 
----
+| Secret Name | Value | Example |
+|---|---|---|
+| `ESEWA_PRODUCT_CODE` | Your eSewa merchant code | `ABC123` |
+| `ESEWA_SECRET_KEY` | Your eSewa secret key | `8gBm/:&EnhH.1/q` |
+| `ESEWA_MONTHLY_PRICE` | Monthly price in NPR | `299` |
+| `ESEWA_YEARLY_PRICE` | Yearly price in NPR | `2399` |
+| `ESEWA_ENV` | Set to exactly `production` | `production` |
 
-## Step 6 — Test a Full Payment
+3. After adding all secrets, restart the API server:
+   - Click the **Workflows** panel in Replit
+   - Find `artifacts/api-server: API Server` → click **Restart**
 
-Before telling your students, test everything yourself end-to-end.
+### Test with real money
 
-**In sandbox mode (before going live):**
-1. Open your site in an incognito window
-2. Sign up as a test student
-3. Go to `/pricing` and click **Pay Monthly**
-4. On the eSewa page, use these test credentials:
-   - eSewa ID: `9806800001`
-   - MPIN: `1122`
-   - Password: `Nepal@123`
-5. Complete the payment
-6. You should land on your dashboard with subscription active
-7. Try opening a premium lesson — it should play
-8. Try downloading a resource — it should work
-
-**After going live (with real eSewa):**
-1. Pay yourself NPR 1 to test (or ask a friend to test)
-2. Confirm the subscription activates in `/admin` → Subscriptions tab
-3. Confirm the student can access all lessons
+Make one real payment to verify everything works end-to-end (you can pay yourself NPR 1 if eSewa allows it, or ask a trusted person to test). Confirm in **/admin** → Subscriptions that the subscription shows as active.
 
 ---
 
-## Step 7 — Check Your YouTube Channel Sync
+## Step 7 — Add Your Real Content
 
-1. Go to `yourapp.replit.app/videos`
-2. You should see your YouTube videos listed automatically
-3. If they don't appear, your channel ID may need updating — contact your developer
+Go to **/admin/courses** on the live site and:
+
+1. **Create your courses** — title, description, category, thumbnail URL, set Published on
+2. **Add lessons** — for each lesson, paste the YouTube video ID  
+   - Your video URL: `https://www.youtube.com/watch?v=dQw4w9WgXcQ`
+   - The video ID is: `dQw4w9WgXcQ`
+   - For premium lessons: set the video to **Unlisted** on YouTube before copying the ID
+3. **Mark 1–2 lessons as Free Preview** per course so students can try before subscribing
 
 ---
 
-## Step 8 — Publish Your Website
+## Step 8 — Connect a Custom Domain (Optional)
 
-1. In Replit, click the **Publish** button (top right)
-2. Choose a name for your `.replit.app` subdomain
-3. Click **Deploy**
-4. Wait 2–3 minutes for the build to complete
-5. Your site is now live at `yourname.replit.app`
+If you own a domain like `kcclassbhw.com`:
 
-> **Custom domain (optional):** If you have a domain like `kcclassbhw.com`, you can connect it in the Replit Deployment settings after publishing.
+1. In Replit, go to your deployment settings → **Custom Domain**
+2. Enter your domain name
+3. Replit shows you two DNS records to add (A record and CNAME)
+4. Log into your domain registrar (e.g. GoDaddy, Namecheap, Cloudflare) and add those records
+5. Wait 15–60 minutes for DNS to propagate
+6. Your site is now live at `kcclassbhw.com`
 
 ---
 
 ## Step 9 — Tell Your Students
 
-Your site is live. Here's what to share:
+Share the following with your students:
 
-- **Website link** — your `.replit.app` URL (or custom domain)
-- **What's free** — students can browse all courses and watch preview lessons without paying
-- **What's paid** — all full lessons, PDF notes, and resources require a subscription
-- **How to pay** — they need an eSewa account (most Nepali students already have one)
-- **Price** — NPR 299/month or NPR 2,399/year (save 33%)
-
----
-
-## Step 10 — Ongoing: Adding New Content
-
-Every time you upload a new video to YouTube:
-
-- **Videos page** — it appears automatically within 10 minutes. Nothing to do.
-- **Course lessons** — go to `/admin/courses` → **Manage Lessons** → **Add Lesson** and paste the YouTube video ID. This is how you add premium content to your courses.
+- **Website:** your `.replit.app` URL (or custom domain)
+- **What is free:** All courses are browsable and 1–2 preview lessons per course are watchable without signing up
+- **What requires a subscription:** All full lessons, PDF notes, and the resource vault
+- **How to pay:** They need an eSewa account — most Nepali students already have one
+- **Price:** NPR 299/month or NPR 2,399/year (33% savings)
 
 ---
 
-## Quick Reference — Important Links
+## Ongoing — Adding New Content
+
+### New YouTube video → Videos page
+
+Nothing to do. The **/videos** page automatically shows your latest YouTube uploads within 10 minutes of publishing.
+
+### New YouTube video → Premium lesson in a course
+
+1. Go to **/admin/courses** → click **Manage Lessons** on the relevant course
+2. Click **Add Lesson** → paste the YouTube video ID → fill in title, duration, order
+3. Toggle **Published** on → click **Create Lesson**
+4. Students with active subscriptions can watch immediately
+
+---
+
+## If Something Breaks After Launch
+
+| Symptom | Where to check | What to do |
+|---|---|---|
+| Site shows an error or blank page | Replit → Workflows panel | Check both workflows are green. Click Restart if either is stopped. |
+| "Database connection failed" | Replit → Secrets tab | Check `DATABASE_URL` is set |
+| eSewa payments failing | Replit → Secrets tab | Check `ESEWA_PRODUCT_CODE`, `ESEWA_SECRET_KEY`, `ESEWA_ENV=production` |
+| Videos page is empty | Wait 10 minutes | The YouTube RSS feed refreshes every 10 minutes automatically |
+| Students can't sign in | Clerk dashboard | Check your Clerk application is active and keys match |
+| Admin panel not accessible | Database | Run `UPDATE users SET role = 'admin' WHERE email = 'your@email.com';` |
+
+---
+
+## Quick Links
 
 | Link | What it is |
 |---|---|
-| `/admin` | Your admin dashboard — stats and user management |
-| `/admin/courses` | Add and manage courses |
-| `/admin/courses/:id/lessons` | Add and manage lessons inside a course |
-| `/pricing` | What your students see when they want to subscribe |
+| `/admin` | Stats, user list, subscription list |
+| `/admin/courses` | Create and manage courses |
+| `/admin/courses/:id/lessons` | Add and manage lessons |
+| `/pricing` | What students see when subscribing |
 | `/videos` | Auto-synced YouTube channel page |
-| `/dashboard` | What a logged-in student sees |
-
----
-
-## If Something Breaks
-
-1. Check the **Workflows** panel in Replit — both `API Server` and `web` should be green/running
-2. If the API server has stopped, click restart
-3. If the database is not connecting, check that `DATABASE_URL` is set in your Secrets tab
-4. If eSewa payments are failing, double-check `ESEWA_PRODUCT_CODE`, `ESEWA_SECRET_KEY`, and `ESEWA_ENV` in Secrets
-5. If your YouTube videos are not showing, wait 10 minutes — the feed refreshes automatically
+| `/dashboard` | What a signed-in student sees |
 
 ---
 
 ## Summary Checklist
 
-- [ ] Database created and schema pushed
-- [ ] Signed up on the live site and promoted yourself to admin
-- [ ] At least one course added and published
-- [ ] At least one lesson added per course with a YouTube video ID
-- [ ] 1–2 free preview lessons set per course
-- [ ] eSewa merchant account applied for (or sandbox mode tested)
-- [ ] eSewa secrets added to Replit (when ready for real payments)
-- [ ] Full payment tested end-to-end
-- [ ] YouTube Videos page showing your channel videos
-- [ ] App published and live URL shared with students
+- [ ] Production database created and schema pushed (Step 1)
+- [ ] App published on Replit (Step 3)
+- [ ] Full sandbox eSewa payment tested end-to-end (Step 4)
+- [ ] Promoted yourself to admin on the live site (Step 5)
+- [ ] At least one published course with lessons added (Step 7)
+- [ ] 1–2 free preview lessons set per course (Step 7)
+- [ ] eSewa merchant account obtained and secrets added (Step 6)
+- [ ] Real payment tested end-to-end (Step 6)
+- [ ] YouTube Videos page confirmed working (auto-syncs)
+- [ ] Live URL shared with students (Step 9)
