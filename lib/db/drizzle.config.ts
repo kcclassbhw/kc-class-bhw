@@ -1,8 +1,12 @@
 import dotenv from "dotenv";
 import path from "path";
+import { fileURLToPath } from "url";
 
-// Load .env from the api-server directory so local `pnpm db:push` works
-// without requiring a separate DATABASE_URL export in the terminal.
+// ESM-compatible __dirname (works on Windows, Mac, and Linux)
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Load DATABASE_URL from the api-server .env so you can run
+// `pnpm --filter @workspace/db run push` without exporting the var manually.
 dotenv.config({
   path: path.resolve(__dirname, "../../artifacts/api-server/.env"),
 });
@@ -11,7 +15,17 @@ import { defineConfig } from "drizzle-kit";
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
-    "DATABASE_URL is not set. Make sure artifacts/api-server/.env contains DATABASE_URL.",
+    [
+      "",
+      "  ERROR: DATABASE_URL is not set.",
+      "",
+      "  Make sure artifacts/api-server/.env exists and contains:",
+      "    DATABASE_URL=postgresql://user:password@host:5432/dbname",
+      "",
+      "  Copy the template:  copy artifacts\\api-server\\.env.example artifacts\\api-server\\.env",
+      "  Then fill in your database connection string.",
+      "",
+    ].join("\n"),
   );
 }
 

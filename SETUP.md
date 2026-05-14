@@ -1,232 +1,237 @@
-# KC Class BHW — Local Development Setup Guide
+# KC Class BHW — Local Development Setup (Windows 11)
 
-**Platform:** Windows 11 · VSCode · Node 22 · pnpm · Git  
-**Time to complete first setup:** ~20 minutes
+**Tested on:** Windows 11 · VSCode · Node 22 · pnpm 9+ · Git  
+**Time to complete:** ~20 minutes on first run
 
 ---
 
-## What You Will Have at the End
+## What You Will Have When Done
 
 | Service | URL | What it does |
 |---|---|---|
-| Frontend (React) | http://localhost:3000 | The full KC Class BHW website |
-| API Server (Express) | http://localhost:8080 | Backend — courses, auth, payments |
+| Frontend (React + Vite) | http://localhost:3000 | The full KC Class BHW website |
+| API Server (Express) | http://localhost:8080 | Backend — courses, auth, payments, progress |
 
 ---
 
 ## Prerequisites
 
-Before cloning the project, verify you have everything installed.
+Open **Windows Terminal** or **PowerShell** and verify each tool:
 
-Open **PowerShell** or the **Windows Terminal** and run each check:
-
+### Check Node.js
 ```powershell
 node --version
 ```
-Must show `v22.x.x` or higher. If not, download from https://nodejs.org (choose LTS).
+Must print `v22.x.x` or higher. If not installed: https://nodejs.org → download **LTS**.
 
+### Check pnpm
 ```powershell
 pnpm --version
 ```
-Must show `9.x.x` or higher (10.x and 11.x also work). If not installed:
+Must print `9.x.x` or higher (10.x and 11.x also work). If not installed:
 ```powershell
 npm install -g pnpm
 ```
+Then **close and reopen** your terminal so the new command is on the PATH.
 
+### Check Git
 ```powershell
 git --version
 ```
-Must show any version. If not installed, download from https://git-scm.com/downloads.
+Any version is fine. If not installed: https://git-scm.com/downloads/win
 
 ---
 
-## Step 1 — Get the Code
+## Step 1 — Clone the Repository
 
-Open **PowerShell** or **Windows Terminal** in the folder where you keep projects (e.g. `C:\projects`), then run:
+In Windows Terminal, navigate to wherever you keep projects (e.g. `C:\projects`) and run:
 
 ```powershell
 git clone https://github.com/BugBasherX/KC-Class.git
 cd KC-Class
 ```
 
-Open the project in VSCode:
-
+Open the folder in VSCode:
 ```powershell
 code .
 ```
 
-When VSCode opens it will suggest installing recommended extensions — click **Install All**. This gives you Tailwind autocomplete, Prettier formatting, and SQLTools for database queries.
+When VSCode opens, a notification will appear: **"Do you want to install the recommended extensions?"** — click **Install All**. This adds Tailwind autocomplete, Prettier, ESLint, GitLens, and SQLTools.
 
 ---
 
 ## Step 2 — Install Dependencies
 
-In the VSCode terminal (`Ctrl+`` ` ``), run:
+In the VSCode integrated terminal (`Ctrl+`` ` ``), run:
 
 ```powershell
 pnpm install
 ```
 
-This installs all packages for the frontend, API server, and shared libraries at once. Takes 1–3 minutes on the first run. You will see a progress bar and finally `Done in X.Xs`.
+This installs all packages for the frontend, API server, database layer, and shared libraries in one command. Expect 1–3 minutes on first run. You will see a progress bar followed by `Done in X.Xs`.
 
-> **If you see `Error: Use pnpm instead of npm/yarn`** — you ran `npm install` instead of `pnpm install`. Run `pnpm install` instead.
+> **If you see `Error: Use pnpm instead of npm/yarn`:** you ran `npm install` or `yarn install`. Run `pnpm install` instead.
+
+> **If pnpm is not recognized:** close VSCode completely, reopen it, and try again. If still missing, run `npm install -g pnpm` in PowerShell and reopen.
 
 ---
 
-## Step 3 — Create the Environment Files
+## Step 3 — Create Environment Files
 
-The project needs two `.env` files — one for the frontend, one for the API server. Neither is committed to Git (they contain secrets).
+The project needs two `.env` files — one for the frontend, one for the API server. These are never committed to Git.
 
-### Option A — File Explorer (easiest on Windows)
+### In File Explorer (easiest)
+1. Navigate to the project folder
+2. Open `artifacts\learn\` — right-click `.env.example` → **Copy** → **Paste** in the same folder → rename the copy to `.env`
+3. Open `artifacts\api-server\` — right-click `.env.example` → **Copy** → **Paste** → rename to `.env`
 
-1. Open File Explorer and navigate to the project folder
-2. Go into `artifacts\learn\` — copy `.env.example`, paste it in the same folder, rename the copy to `.env`
-3. Go into `artifacts\api-server\` — copy `.env.example`, paste it in the same folder, rename the copy to `.env`
-
-### Option B — PowerShell
-
+### In PowerShell
 ```powershell
 copy artifacts\learn\.env.example       artifacts\learn\.env
 copy artifacts\api-server\.env.example  artifacts\api-server\.env
+```
+
+You should now have:
+```
+artifacts\
+  learn\
+    .env          ← frontend config (you just created this)
+    .env.example  ← template (leave it as-is)
+  api-server\
+    .env          ← server config (you just created this)
+    .env.example  ← template (leave it as-is)
 ```
 
 ---
 
 ## Step 4 — Set Up a Database
 
-The API server needs a PostgreSQL database. Choose one of these two options.
+The API server needs a PostgreSQL database. Pick one option.
 
-### Option A — Neon (free cloud database, no install needed — recommended)
+---
 
-1. Go to https://neon.tech and sign up (free, no credit card)
-2. Click **New Project** → name it `kc-class-bhw` → click **Create Project**
-3. On the dashboard, click **Connect** → copy the connection string. It looks like:
+### Option A — Neon (free cloud, no install needed — recommended for beginners)
+
+1. Go to https://neon.tech → **Sign Up** (free, no credit card)
+2. Click **New Project** → name it anything → **Create Project**
+3. On the dashboard, click **Connect** → copy the **connection string**:
    ```
    postgresql://username:password@ep-something.us-east-1.aws.neon.tech/neondb?sslmode=require
    ```
-4. Open `artifacts\api-server\.env` in VSCode and replace the `DATABASE_URL` line with your connection string:
+4. Open `artifacts\api-server\.env` in VSCode and replace the `DATABASE_URL` line:
    ```env
    DATABASE_URL=postgresql://username:password@ep-something.us-east-1.aws.neon.tech/neondb?sslmode=require
    ```
 
+---
+
 ### Option B — Local PostgreSQL
 
-1. Download from https://www.postgresql.org/download/windows/ and install (keep defaults)
-2. During install, set a password for the `postgres` user — remember it
-3. After install, open **pgAdmin** (installed with PostgreSQL) or open **SQL Shell (psql)** from the Start menu
-4. Create the database:
+1. Download from https://www.postgresql.org/download/windows/ → run the installer (keep all defaults)
+2. Set a password for the `postgres` user during install — **write it down**
+3. After install finishes, verify PostgreSQL is running:
+   - Press `Win+R`, type `services.msc`, press Enter
+   - Find `postgresql-x64-XX` in the list — it should say **Running**
+   - If it says Stopped: right-click → **Start**
+4. Open **SQL Shell (psql)** from the Start menu, log in as `postgres`, and create the database:
    ```sql
    CREATE DATABASE learnhub;
+   \q
    ```
 5. Open `artifacts\api-server\.env` and set:
    ```env
    DATABASE_URL=postgresql://postgres:YOURPASSWORD@localhost:5432/learnhub
    ```
 
-> **Verify PostgreSQL is running:** Open Services (`Win+R` → `services.msc`) and check that `postgresql-x64-XX` is listed as **Running**. If not, right-click it → Start.
-
 ---
 
-## Step 5 — Get Your Clerk Auth Keys
+## Step 5 — Get Clerk Auth Keys
 
-Clerk handles sign-in and sign-up. You need a free Clerk account to get keys.
+Clerk handles user sign-in and sign-up. You need a free Clerk account.
 
-1. Go to https://dashboard.clerk.com and sign up (free)
-2. Click **Create Application** → give it any name (e.g. `KC Class BHW`) → click **Create**
-3. In the left sidebar, go to **API Keys**
-4. You will see two keys:
+1. Go to https://dashboard.clerk.com → **Sign up** (free)
+2. Click **Create application** → give it a name (e.g. `KC Class BHW`) → **Create**
+3. On the left sidebar, click **API Keys**
+4. Copy both keys:
    - **Publishable key** — starts with `pk_test_...`
    - **Secret key** — starts with `sk_test_...`
 
-### Add keys to `artifacts\learn\.env`
+### Add to `artifacts\learn\.env`
 
-Open the file and set:
-
-```env
-VITE_CLERK_PUBLISHABLE_KEY=pk_test_PASTE_YOUR_KEY_HERE
-```
-
-The `VITE_API_URL` and `VITE_CLERK_PROXY_URL` lines should already be correct for local dev:
+Open the file in VSCode. It should look like this when filled in:
 
 ```env
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_YOUR_KEY_HERE
 VITE_API_URL=http://localhost:8080
 VITE_CLERK_PROXY_URL=http://localhost:8080/api/__clerk
 PORT=3000
 BASE_PATH=/
 ```
 
-### Add keys to `artifacts\api-server\.env`
-
-Open the file and set both keys:
+### Add to `artifacts\api-server\.env`
 
 ```env
 PORT=8080
 NODE_ENV=development
-DATABASE_URL=postgresql://...   ← from Step 4
-CLERK_PUBLISHABLE_KEY=pk_test_PASTE_YOUR_KEY_HERE
-CLERK_SECRET_KEY=sk_test_PASTE_YOUR_SECRET_KEY_HERE
+DATABASE_URL=postgresql://...your connection string from Step 4...
+CLERK_PUBLISHABLE_KEY=pk_test_YOUR_KEY_HERE
+CLERK_SECRET_KEY=sk_test_YOUR_SECRET_KEY_HERE
 ```
 
-> Both files must use the **same** `pk_test_...` publishable key.
+> The `pk_test_...` publishable key must be the **same value** in both files.
 
 ---
 
 ## Step 6 — Push the Database Schema
 
-This creates all the tables (`users`, `courses`, `lessons`, `resources`, `subscriptions`, `progress`, `downloads`) in your database.
+This creates all the tables in your database (users, courses, lessons, resources, subscriptions, progress, downloads).
 
 In the VSCode terminal:
-
 ```powershell
 pnpm --filter @workspace/db run push
 ```
 
-Expected output:
+Expected output — you will be prompted to confirm, type `y` and press Enter:
 ```
-Applying schema...
-  ✓ users
-  ✓ courses
-  ✓ lessons
-  ✓ resources
-  ✓ subscriptions
-  ✓ progress
-  ✓ downloads
-Schema applied successfully.
+[✓] Changes applied
 ```
 
-> If you see `DATABASE_URL is not set` — check that `artifacts\api-server\.env` exists and has the `DATABASE_URL` line filled in.
-> If you see `ECONNREFUSED 127.0.0.1:5432` — your local PostgreSQL is not running (see Step 4 Option B). Or switch to Neon.
+> **If you see `DATABASE_URL is not set`:**
+> `artifacts\api-server\.env` is missing or the `DATABASE_URL=` line is empty. Go back to Step 5.
+
+> **If you see `ECONNREFUSED 127.0.0.1:5432`:**
+> Local PostgreSQL is not running. Open Services (`Win+R` → `services.msc`) → find `postgresql-x64-XX` → right-click → Start. Or switch to Neon (Step 4 Option A).
 
 ---
 
 ## Step 7 — Start the Servers
 
-You need both servers running at the same time. You have two ways to do this.
+You need **two servers running at the same time** — the API server and the frontend. You have two ways.
 
-### Option A — VSCode Task (recommended, one click)
+### Option A — VSCode Task (one click, recommended)
 
 1. Press `Ctrl+Shift+P`
-2. Type `Tasks: Run Task` and press Enter
+2. Type `Tasks: Run Task` → press Enter
 3. Select **Start Both (Full Stack)**
 
-VSCode opens two terminals side by side — one for the API server, one for the frontend. Both start in parallel.
+VSCode opens two dedicated terminals side by side automatically.
 
-### Option B — Two terminals manually
+### Option B — Two PowerShell terminals manually
 
 **Terminal 1 — API Server:**
 ```powershell
 pnpm --filter @workspace/api-server run dev
 ```
-Wait for this line before continuing:
+Wait until you see:
 ```
-Server listening  port: 8080
+{"level":30,"msg":"Server listening","port":8080}
 ```
 
-**Terminal 2 — Frontend** (open a new terminal with `Ctrl+Shift+5` or the `+` button):
+**Terminal 2 — Frontend** (click `+` to open a new terminal):
 ```powershell
 pnpm --filter @workspace/learn run dev
 ```
-Wait for:
+Wait until you see:
 ```
   ➜  Local:   http://localhost:3000/
 ```
@@ -235,7 +240,7 @@ Wait for:
 
 ## Step 8 — Open the App
 
-Go to **http://localhost:3000** in your browser (Chrome or Edge recommended).
+Go to **http://localhost:3000** in your browser (Chrome or Edge).
 
 You should see the KC Class BHW landing page. Click **Sign Up** to create your first account.
 
@@ -243,84 +248,84 @@ You should see the KC Class BHW landing page. Click **Sign Up** to create your f
 
 ## Step 9 — Make Yourself Admin
 
-After signing up on the site, promote your account to admin so you can manage courses and users.
+After signing up on the site, you need to promote your account to admin so you can manage courses and content.
 
-### Find your user in the database
+### Using SQLTools in VSCode (recommended)
 
-**Using SQLTools in VSCode (easiest):**
-1. Press `Ctrl+Shift+P` → **SQLTools: New Connection** → choose PostgreSQL
-2. Fill in your database connection details → click **Test Connection** → **Save**
-3. Open the connection → run:
+1. In VSCode, press `Ctrl+Shift+P` → **SQLTools: New Connection**
+2. Choose **PostgreSQL**
+3. Fill in your connection details (host, port, database, user, password from Step 4)
+4. Click **Test Connection** → then **Save**
+5. Open the connection → run this to find your user:
    ```sql
    SELECT clerk_id, email, role FROM users;
    ```
-4. Copy your `clerk_id` value, then run:
+6. Copy your `clerk_id`, then promote yourself:
    ```sql
-   UPDATE users SET role = 'admin' WHERE clerk_id = 'user_PASTE_YOUR_CLERK_ID';
+   UPDATE users SET role = 'admin' WHERE clerk_id = 'user_PASTE_YOUR_ID_HERE';
    ```
 
-**Using psql (local PostgreSQL only):**
-```powershell
-psql -U postgres -d learnhub -c "UPDATE users SET role = 'admin' WHERE email = 'your@email.com';"
-```
+### Using Neon SQL Editor (if you used Neon)
 
-**Using Neon dashboard:**
-1. Open your Neon project → click **SQL Editor**
+1. Open your Neon project → **SQL Editor** tab
 2. Run:
    ```sql
    UPDATE users SET role = 'admin' WHERE email = 'your@email.com';
    ```
 
-After updating, **refresh the page** in your browser. You will now see the **Admin** link in the navigation.
+### Using psql (local PostgreSQL)
+
+```powershell
+psql -U postgres -d learnhub -c "UPDATE users SET role = 'admin' WHERE email = 'your@email.com';"
+```
+
+After updating, **refresh the page** in your browser. The **Admin** link appears in the navigation bar.
 
 ---
 
-## Step 10 — Add Your First Course
+## Step 10 — Add Your First Course and Lessons
 
-1. Go to http://localhost:3000/admin/courses
-2. Click **New Course**
-3. Fill in:
-   - **Title** — e.g. `B.Ed English Grammar Complete`
-   - **Description** — what students will learn
-   - **Category** — Grammar, Pedagogy, Phonetics, or Literature
-   - **Thumbnail URL** — paste any direct image URL for the course cover
-   - Toggle **Published** on
-4. Click **Create Course**
+Go to http://localhost:3000/admin/courses and click **New Course**.
 
-### Add lessons to the course
+Fill in:
+- **Title** — e.g. `B.Ed English Grammar Complete`
+- **Description** — what students will learn
+- **Category** — Grammar, Pedagogy, Phonetics, or Literature
+- **Thumbnail URL** — any direct image URL (e.g. a Google Images direct link)
+- Toggle **Published** on → click **Create Course**
 
-1. Click **Manage Lessons** on the course you just created
-2. Click **Add Lesson**
-3. Fill in:
-   - **Title** — lesson name
-   - **YouTube Video ID** — the part after `?v=` in your YouTube URL  
-     e.g. for `https://www.youtube.com/watch?v=dQw4w9WgXcQ` → the ID is `dQw4w9WgXcQ`
-   - **Duration (minutes)**, **Sort Order** (1 = first lesson)
-   - Toggle **Free Preview** on for 1–2 lessons per course
-   - Toggle **Published** on
-4. Click **Create Lesson**
+### Add lessons
 
-> **Tip for premium content:** Set your YouTube video to **Unlisted** so it does not appear in YouTube search. Only your website will have the link.
+Click **Manage Lessons** on your course → **Add Lesson**:
+
+- **Title** — lesson name
+- **YouTube Video ID** — from your YouTube URL  
+  e.g. `https://www.youtube.com/watch?v=dQw4w9WgXcQ` → the ID is `dQw4w9WgXcQ`
+- **Duration (minutes)** and **Sort Order** (1 = first lesson)
+- Toggle **Free Preview** on for 1–2 lessons so students can try before subscribing
+- Toggle **Published** on → **Create Lesson**
+
+> **Tip for premium lessons:** Publish the video as **Unlisted** on YouTube. Unlisted videos don't appear in YouTube search or on your channel page — only your website has the link.
 
 ---
 
 ## Daily Workflow
 
-After the first setup, every time you want to work on the project:
+Every time you want to work on the project after first setup:
 
 ```powershell
-# Option A — VSCode Task
+# Option A — one click
 Ctrl+Shift+P → Tasks: Run Task → Start Both (Full Stack)
 
-# Option B — Two terminals
+# Option B — two terminals
 pnpm --filter @workspace/api-server run dev   # Terminal 1
 pnpm --filter @workspace/learn run dev         # Terminal 2
 ```
 
-Then open http://localhost:3000.
+Then open **http://localhost:3000**.
 
-Changes to frontend files reload the browser automatically.  
-Changes to API server files rebuild and restart the server automatically (~3 seconds).
+- Frontend file changes → browser reloads automatically
+- API server file changes → server rebuilds and restarts (~3 seconds)
 
 ---
 
@@ -328,82 +333,72 @@ Changes to API server files rebuild and restart the server automatically (~3 sec
 
 | Command | What it does |
 |---|---|
-| `pnpm install` | Install all dependencies (run once after cloning) |
+| `pnpm install` | Install all dependencies (once after cloning) |
 | `pnpm --filter @workspace/api-server run dev` | Start API server on port 8080 |
 | `pnpm --filter @workspace/learn run dev` | Start frontend on port 3000 |
-| `pnpm --filter @workspace/db run push` | Apply DB schema changes to your database |
-| `pnpm run typecheck` | Check TypeScript errors across all packages |
-| `pnpm --filter @workspace/api-spec run codegen` | Regenerate API hooks (only needed after editing `openapi.yaml`) |
+| `pnpm --filter @workspace/db run push` | Apply DB schema to your database |
+| `pnpm run typecheck` | TypeScript check across all packages |
+| `pnpm --filter @workspace/api-spec run codegen` | Regenerate API hooks (only after editing `openapi.yaml`) |
 
 ---
 
 ## Project Structure
 
 ```
-KC-Class/
-├── artifacts/
-│   ├── api-server/              API server (Express, port 8080)
-│   │   ├── src/
-│   │   │   ├── routes/          All API route handlers
-│   │   │   ├── middlewares/     Clerk proxy middleware
-│   │   │   └── app.ts           Express app setup
-│   │   ├── .env                 YOUR local config (you create this)
-│   │   └── .env.example         Template — copy this to .env
-│   │
-│   └── learn/                   React frontend (Vite, port 3000)
-│       ├── src/
-│       │   ├── pages/           All page components
-│       │   ├── components/      Shared UI components
-│       │   └── App.tsx          Router + Clerk provider setup
-│       ├── .env                 YOUR local config (you create this)
-│       └── .env.example         Template — copy this to .env
-│
-├── lib/
-│   ├── db/                      PostgreSQL schema (Drizzle ORM)
-│   ├── api-spec/                OpenAPI spec — source of truth for the API
-│   ├── api-zod/                 Auto-generated Zod validation schemas
-│   └── api-client-react/        Auto-generated React Query hooks
-│
-├── scripts/                     Utility scripts
-├── SETUP.md                     This file
-├── LAUNCH_GUIDE.md              How to go live (publish + eSewa payments)
-└── README.md                    Full technical reference
+KC-Class\
+├── artifacts\
+│   ├── api-server\          Express API server (port 8080)
+│   │   ├── src\routes\      API route handlers
+│   │   ├── .env             Your local server config  ← YOU CREATE THIS
+│   │   └── .env.example     Template to copy from
+│   └── learn\               React frontend (Vite, port 3000)
+│       ├── src\pages\       All page components
+│       ├── src\components\  Shared UI components
+│       ├── .env             Your local frontend config  ← YOU CREATE THIS
+│       └── .env.example     Template to copy from
+├── lib\
+│   ├── db\                  PostgreSQL schema (Drizzle ORM)
+│   ├── api-spec\            OpenAPI spec — source of truth for the API
+│   ├── api-zod\             Auto-generated Zod validation schemas
+│   └── api-client-react\    Auto-generated React Query hooks
+├── scripts\                 Utility scripts
+├── SETUP.md                 This file
+├── LAUNCH_GUIDE.md          How to go live with eSewa payments
+└── README.md                Full technical reference
 ```
 
 ---
 
 ## Troubleshooting
 
-### `pnpm install` fails immediately
-Make sure you are running `pnpm install`, not `npm install`. The project requires pnpm.
+### `pnpm install` gives "ERROR: Please use pnpm"
+You ran `npm install`. Run `pnpm install` instead.
+
+### `pnpm` is not recognized as a command
+Close VSCode completely and reopen it. If still missing, run `npm install -g pnpm` in PowerShell, then close and reopen.
+
+### Blank white page or nothing loads at localhost:3000
+1. Open DevTools in your browser: press `F12` → **Console** tab
+2. If you see **`Missing VITE_CLERK_PUBLISHABLE_KEY`**: `artifacts\learn\.env` is missing or still has `pk_test_REPLACE_ME`. Go to Step 5.
+3. If you see a network error: make sure the API server is running (Terminal 1 shows `Server listening port: 8080`)
 
 ### `Error: PORT environment variable is required`
-`artifacts\api-server\.env` is missing or does not have `PORT=8080`. Create the file from `.env.example`.
+`artifacts\api-server\.env` does not exist or is missing `PORT=8080`. Create it from `.env.example` (Step 3).
 
 ### `Error: DATABASE_URL is not set`
-`artifacts\api-server\.env` is missing or does not have a `DATABASE_URL` line. Fill it in (Step 4).
+`artifacts\api-server\.env` is missing or the `DATABASE_URL=` line is empty or still has the placeholder. Fill it in (Step 4 and 5).
 
 ### `ECONNREFUSED 127.0.0.1:5432`
-Your local PostgreSQL is not running.  
-- Open Services (`Win+R` → `services.msc`) → find `postgresql-x64-XX` → right-click → Start  
-- Or switch to Neon (free cloud, no local install needed — Step 4 Option A)
+Local PostgreSQL is not running.
+- Press `Win+R` → `services.msc` → find `postgresql-x64-XX` → right-click → **Start**
+- Or switch to Neon (free cloud, Step 4 Option A) — no local install needed
 
-### Blank white page at localhost:3000
-Open browser DevTools (`F12`) → Console tab. If you see `Missing VITE_CLERK_PUBLISHABLE_KEY`, the frontend `.env` file is missing or the key is still `pk_test_REPLACE_ME`. Complete Step 5.
-
-### "Courses not loading" or blank course list
-Make sure the API server is running (Terminal 1 shows `Server listening  port: 8080`) and that `VITE_API_URL=http://localhost:8080` is in `artifacts\learn\.env`.
-
-### Sign-in / Clerk not working
-- Confirm `VITE_CLERK_PUBLISHABLE_KEY` in `artifacts\learn\.env` matches `CLERK_PUBLISHABLE_KEY` in `artifacts\api-server\.env`
-- Confirm you have an active internet connection (Clerk requires it even in dev mode)
-
-### Schema push fails — `relation already exists`
-Your database already has the tables from a previous run — this is fine, ignore the message. If you want a completely clean start:
+### Schema push fails with `relation already exists`
+The tables already exist from a previous run — this is fine. If you want a clean start:
 ```powershell
-# Neon: drop and recreate via the Neon dashboard SQL editor
-DROP DATABASE learnhub;
-CREATE DATABASE learnhub;
+# Neon: use the SQL Editor on the Neon dashboard
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
 
 # Local PostgreSQL
 psql -U postgres -c "DROP DATABASE learnhub;"
@@ -411,35 +406,43 @@ psql -U postgres -c "CREATE DATABASE learnhub;"
 pnpm --filter @workspace/db run push
 ```
 
-### TypeScript errors showing in VSCode but `pnpm run typecheck` passes
-The editor is using the wrong TypeScript version. Press `Ctrl+Shift+P` → **TypeScript: Select TypeScript Version** → **Use Workspace Version**.
+### Courses not loading / API errors in the browser console
+1. Confirm Terminal 1 shows `Server listening  port: 8080`
+2. Confirm `VITE_API_URL=http://localhost:8080` is in `artifacts\learn\.env`
+3. Restart the API server terminal
+
+### Sign-in does not work / Clerk errors
+- Confirm `VITE_CLERK_PUBLISHABLE_KEY` in `artifacts\learn\.env` matches `CLERK_PUBLISHABLE_KEY` in `artifacts\api-server\.env` — same value, same `pk_test_...` string
+- Confirm you have an internet connection (Clerk needs it even in dev mode)
+
+### TypeScript errors in VSCode editor but `pnpm run typecheck` passes
+The editor is using the wrong TypeScript version.
+- Press `Ctrl+Shift+P` → **TypeScript: Select TypeScript Version** → **Use Workspace Version**
 
 ### `Cannot find module '@workspace/db'` or similar
-A workspace package link was lost. Run `pnpm install` again.
+Run `pnpm install` again — a symlink may have been lost.
 
-### VSCode terminal shows `'pnpm' is not recognized`
-pnpm is not on your PATH. Close VSCode completely, then reopen it. If still not found, run `npm install -g pnpm` in PowerShell and restart.
+### VSCode task "Start Both (Full Stack)" doesn't appear
+Close VSCode and reopen the project folder. The tasks come from `.vscode\tasks.json` which is included in the repo.
 
 ---
 
-## VSCode Extensions — Install These
+## VSCode Extensions
 
-When you open the project, VSCode suggests the recommended extensions automatically — click **Install All**.
+When the project opens, VSCode suggests all recommended extensions automatically. Click **Install All** when prompted.
 
 | Extension | What it does |
 |---|---|
-| **Prettier** | Formats code on save |
-| **ESLint** | Flags code quality issues as you type |
-| **Tailwind CSS IntelliSense** | Autocomplete for Tailwind class names |
-| **TypeScript (Nightly)** | Better TypeScript language support |
-| **GitLens** | Inline Git blame and file history |
-| **SQLTools + SQLTools PostgreSQL Driver** | Query your database from inside VSCode |
+| Prettier | Formats code on save |
+| ESLint | Highlights code quality issues as you type |
+| Tailwind CSS IntelliSense | Autocomplete for Tailwind class names |
+| TypeScript (Nightly) | Better TypeScript language server |
+| GitLens | Inline Git blame and file history |
+| SQLTools + PostgreSQL Driver | Query your database from inside VSCode |
+| Path IntelliSense | Autocomplete for file paths |
 
 ---
 
 ## Ready to Go Live?
 
-See **LAUNCH_GUIDE.md** for the complete step-by-step guide to:
-- Publishing to the internet (one click on Replit)
-- Connecting your eSewa merchant account for real NPR payments
-- Setting up a custom domain (e.g. `kcclassbhw.com`)
+See **LAUNCH_GUIDE.md** for publishing to the internet, connecting your eSewa merchant account for real NPR payments, and setting up a custom domain.
